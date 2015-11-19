@@ -1,0 +1,22 @@
+{
+  "name": "edc-create-image-frames",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/stierma1/edc-create-image-frames.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/stierma1/edc-create-image-frames/issues"
+  },
+  "homepage": "https://github.com/stierma1/edc-create-image-frames#readme",
+  "dependencies": {
+    "jimp": "^0.2.19"
+  }
+}
