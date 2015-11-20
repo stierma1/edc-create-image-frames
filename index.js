@@ -103,6 +103,7 @@ class CreateFrames extends Worker {
       req.body = frames;
     }
     req.next();
+  }
 }
 
 module.exports = CreateFrames;
