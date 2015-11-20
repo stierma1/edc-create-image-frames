@@ -12,18 +12,21 @@ var minYMatch = /_min_y\/{([1-9][0-9]*)}/;
 var resizeToMin = /_resize_to_min\/{true}/
 
 class VirtualFrame {
-  constructor(maxX, maxY, xOffset, yOffset, width, height){
+  constructor(maxX, maxY, xOffset, yOffset, width, height, minX, minY, resize){
     this.maxX = maxX;
     this.maxY = maxY;
     this.xOffset = xOffset;
     this.yOffset = yOffset;
     this.width = width;
-    this.heigth = height;
+    this.height = height;
+    this.minX = minX;
+    this.minY = minY;
+    this.resize = resize;
   }
 
   shiftX(shiftDistance){
     if(this.maxX > this.xOffset + this.width + shiftDistance){
-      return new VirtualFrame(this.maxX, this.maxY, this.xOffset + shiftDistance, this.yOffset, this.width, this.height);
+      return new VirtualFrame(this.maxX, this.maxY, this.xOffset + shiftDistance, this.yOffset, this.width, this.height, this.minX, this.minY, this.resize);
     } else {
       return null;
     }
@@ -31,7 +34,7 @@ class VirtualFrame {
 
   shiftY(shiftDistance){
     if(this.maxY > this.yOffset + this.height + shiftDistance){
-      return new VirtualFrame(this.maxX, this.maxY, this.xOffset, this.yOffset + shiftDistance, this.width, this.height);
+      return new VirtualFrame(this.maxX, this.maxY, this.xOffset, this.yOffset + shiftDistance, this.width, this.height, this.minX, this.minY, this.resize);
     } else {
       return null;
     }
@@ -39,25 +42,28 @@ class VirtualFrame {
 
   scale(factor){
     if(this.maxY > this.yOffset + this.height*factor && this.maxX > this.xOffset + this.width*factor){
-      return new VirtualFrame(this.maxX, this.maxY, this.xOffset, this.yOffset, Math.floor(this.width * factor), Math.floor(this.height * factor));
+      return new VirtualFrame(this.maxX, this.maxY, this.xOffset, this.yOffset, Math.floor(this.width * factor), Math.floor(this.height * factor), this.minX, this.minY, this.resize);
     } else {
       return null;
     }
   }
 
-  makeConcrete(image){
-    return image.crop(this.xOffset, this.yOffset, this.width, this.height).then((img2) => {
-      return img2.getBuffer("image/jpeg");
-    }).then((buffer) => {
-      return {
-        image:buffer,
-        frameData: this
+  makeConcrete(image, resize){
+    return new Promise( (resolve, reject) => {
+      var img = image.crop(this.xOffset, this.yOffset, this.width, this.height)
+      if(this.resize){
+        img = img.resize(this.minX, this.minY)
       }
+        img.quality(75)
+        .getBuffer(Jimp.MIME_JPEG, (err, buff) => {
+          resolve({
+            image:buff,
+            frameData: this
+          });
+        });
     });
   }
 }
-
-function createFrame(image, scale, shift, xOffset,)
 
 class CreateFrames extends Worker {
   constructor(parent){
@@ -79,9 +85,9 @@ class CreateFrames extends Worker {
     var shiftY = shiftYMatch.exec(currentPath);
     shiftY = shiftY ? parseInt(shiftY[1]) : 1;
     var minX = minXMatch.exec(currentPath);
-    minX = minX ? parseInt(minX[1]) : 16;
+    minX = minX ? parseInt(minX[1]) : 32;
     var minY = minYMatch.exec(currentPath);
-    minY = minY ? parseInt(minY[1]) : 16;
+    minY = minY ? parseInt(minY[1]) : 32
     var resize = resizeToMin.exec(currentPath);
     resize = resize ? true : false;
 
@@ -89,7 +95,7 @@ class CreateFrames extends Worker {
       var height = image.bitmap.height;
       var width = image.bitmap.width;
       var frames = [];
-      var initFrame = new VirtualFrame(width, heigth, 0, 0, minX, minY);
+      var initFrame = new VirtualFrame(width, height, 0, 0, minX, minY, resize);
       var newFrame = initFrame;
       var curScale = 1;
 
@@ -102,7 +108,7 @@ class CreateFrames extends Worker {
         while(downFrame){
           var rightFrame = downFrame;
           while(rightFrame){
-            rightFrame = newFrame.shiftX(shiftX);
+            rightFrame = rightFrame.shiftX(shiftX);
             if(rightFrame){
               frames.push(rightFrame);
             }
@@ -115,10 +121,9 @@ class CreateFrames extends Worker {
 
         curScale *= scale;
       }
-
       return Promise.all(
         frames.map((frame) => {
-          return frame.makeConcrete(image);
+          return frame.makeConcrete(image, resize, minX, minY);
         })
       );
     }).then((frames) => {
@@ -131,7 +136,6 @@ class CreateFrames extends Worker {
     }).catch((err) => {
       req.status(err).next();
     });
-
 
   }
 }

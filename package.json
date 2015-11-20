@@ -1,6 +1,6 @@
 {
   "name": "edc-create-image-frames",
-  "version": "1.0.0",
+  "version": "1.0.4",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -17,6 +17,7 @@
   },
   "homepage": "https://github.com/stierma1/edc-create-image-frames#readme",
   "dependencies": {
+    "basic-distributed-computation": "^1.0.2",
     "jimp": "^0.2.19"
   }
 }
