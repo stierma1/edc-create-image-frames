@@ -19,10 +19,12 @@ class CreateFrames extends Worker {
   }
 
   work(req, inputKey, outputKey){
+
     var inputVal = req.body;
     if(inputKey){
         inputVal = req.body[inputKey];
     }
+    inputVal = {};
     var currentPath = req.paths[req.currentIdx];
     var scale = scaleMatch.exec(currentPath);
     scale = scale ? parseFloat(scale[1]) : 2;
@@ -60,12 +62,12 @@ class CreateFrames extends Worker {
         resize = inputVal.resize;
     }
     var height = heightMatch.exec(currentPath);
-    height = height ? parseInt(height) : 1;
+    height = height ? parseInt(height[1]) : 1;
     if(inputVal.height){
         height = inputVal.height;
     }
     var width = widthMatch.exec(currentPath);
-    width = width ? pathInt(width) : false;
+    width = width ? parseInt(width[1]) : false;
     if(inputVal.width){
         width = inputVal.width;
     }
@@ -97,12 +99,15 @@ class CreateFrames extends Worker {
 
       curScale *= scale;
     }
+
     if(outputKey){
       req.body[outputKey] = frames;
     } else {
       req.body = frames;
     }
+
     req.next();
+
   }
 }
 
