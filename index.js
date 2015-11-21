@@ -24,7 +24,7 @@ class CreateFrames extends Worker {
     if(inputKey){
         inputVal = req.body[inputKey];
     }
-    inputVal = {};
+
     var currentPath = req.paths[req.currentIdx];
     var scale = scaleMatch.exec(currentPath);
     scale = scale ? parseFloat(scale[1]) : 2;
